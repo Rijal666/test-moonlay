@@ -8,7 +8,7 @@ Aplikasi yang umumnya digunakan untuk memelihara tugas sehari-hari atau membuat 
 
 1. Clone the repo
    ```sh
-   git clone https://github.com/Rial666/test-moonlay.git
+   git clone https://github.com/Rijal666/test-moonlay.git
    ```
 2. Install Go packages
    ```sh
