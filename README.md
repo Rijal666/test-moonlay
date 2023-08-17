@@ -26,3 +26,5 @@ Aplikasi yang umumnya digunakan untuk memelihara tugas sehari-hari atau membuat 
    ```sh
    go run main.go
    ```
+### testing
+1. lakukan testing di postman dengan path sebagai berikut :
