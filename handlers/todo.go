@@ -29,7 +29,7 @@ func (h *handlerTodo) FindTodos(c echo.Context) error {
 	}
 
 	if len(todos) > 0 {
-		return c.JSON(http.StatusOK, resultdto.SuccessResult{Status: http.StatusOK, Message: "Data for all todos was successfully obtained", Data: convertResponseTodos(todos)})
+		return c.JSON(http.StatusOK, resultdto.SuccessResult{Status: http.StatusOK, Message: "Data for all todos was successfully obtained", Data: todos})
 	} else {
 		return c.JSON(http.StatusBadRequest, resultdto.ErrorResult{Status: http.StatusBadRequest, Message: "No record found"})
 	}
@@ -45,7 +45,6 @@ func (h *handlerTodo) GetTodo(c echo.Context) error {
 	}
 
 	sublists, err := h.TodoRepository.GetSublistByTodoID(id)
-	fmt.Println(sublists, "result")
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, resultdto.ErrorResult{Status: http.StatusBadRequest, Message: err.Error()})
 	}
@@ -71,7 +70,6 @@ func (h *handlerTodo) CreateTodo(c echo.Context) error {
 
 	dataFile := c.Get("dataFiles").([]string)
 	stringDataFiles := strings.Join(dataFile, ",")
-
 	request := tododto.TodoRequest{
 		Title:       c.FormValue("title"),
 		Description: c.FormValue("description"),
@@ -96,10 +94,12 @@ func (h *handlerTodo) CreateTodo(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, resultdto.ErrorResult{Status: http.StatusInternalServerError, Message: err.Error()})
 	}
 
+	fmt.Println(data.Files, "dataFiles")
 	result := map[string]interface{}{
 		"title":       data.Title,
 		"description": data.Description,
 		"files":       strings.Split(data.Files, ","),
+		"sublist":     data.Sublist,
 	}
 
 	return c.JSON(http.StatusOK, resultdto.SuccessResult{Status: http.StatusOK, Message: "data sudah nambah", Data: result})
@@ -107,11 +107,13 @@ func (h *handlerTodo) CreateTodo(c echo.Context) error {
 }
 
 func (h *handlerTodo) UpdateTodo(c echo.Context) error {
-	dataFile := c.Get("dataFile").(string)
+	dataFile := c.Get("dataFiles").([]string)
+	stringDataFiles := strings.Join(dataFile, ",")
+
 	request := tododto.UpdateTodoRequest{
 		Title:       c.FormValue("title"),
 		Description: c.FormValue("description"),
-		Files:       dataFile,
+		Files:       stringDataFiles,
 	}
 
 	id, _ := strconv.Atoi(c.Param("id"))
@@ -136,7 +138,13 @@ func (h *handlerTodo) UpdateTodo(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, resultdto.ErrorResult{Status: http.StatusInternalServerError, Message: err.Error()})
 
 	}
-	return c.JSON(http.StatusOK, resultdto.SuccessResult{Status: http.StatusOK, Message: "data sudah berhasil di update", Data: convertResponseTodo(data)})
+	result := map[string]interface{}{
+		"title":       data.Title,
+		"description": data.Description,
+		"files":       strings.Split(data.Files, ","),
+		"sublist":     data.Sublist,
+	}
+	return c.JSON(http.StatusOK, resultdto.SuccessResult{Status: http.StatusOK, Message: "data sudah berhasil di update", Data: result})
 
 }
 
@@ -153,7 +161,7 @@ func (h *handlerTodo) DeleteTodo(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, resultdto.ErrorResult{Status: http.StatusInternalServerError, Message: err.Error()})
 
 	}
-	return c.JSON(http.StatusOK, resultdto.SuccessResult{Status: http.StatusOK, Message: "data sudah berhasil di hapus", Data: convertResponseTodo(data)})
+	return c.JSON(http.StatusOK, resultdto.SuccessResult{Status: http.StatusOK, Message: "data sudah berhasil di hapus", Data: data})
 }
 
 func (h *handlerTodo) GetAllLists(c echo.Context) error {
@@ -180,23 +188,4 @@ func (h *handlerTodo) GetAllLists(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, resultdto.SuccessResult{Status: http.StatusOK, Message: "Todo data successfully obtained", Data: responseData})
-}
-
-func convertResponseTodo(u models.Todo) tododto.TodoResponse {
-	return tododto.TodoResponse{
-		ID:          u.ID,
-		Title:       u.Title,
-		Description: u.Description,
-		Files:       u.Files,
-	}
-}
-
-func convertResponseTodos(todos []models.Todo) []tododto.TodoResponse {
-	var responseTodos []tododto.TodoResponse
-
-	for _, todo := range todos {
-		responseTodos = append(responseTodos, convertResponseTodo(todo))
-	}
-
-	return responseTodos
 }

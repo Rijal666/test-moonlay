@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
@@ -30,7 +29,7 @@ func (h *handlerSubList) FindSubLists(c echo.Context) error {
 	}
 
 	if len(sublists) > 0 {
-		return c.JSON(http.StatusOK, resultdto.SuccessResult{Status: http.StatusOK, Message: "Data for all todos was successfully obtained", Data: convertResponseSubLists(sublists)})
+		return c.JSON(http.StatusOK, resultdto.SuccessResult{Status: http.StatusOK, Message: "Data for all todos was successfully obtained", Data: sublists})
 	} else {
 		return c.JSON(http.StatusBadRequest, resultdto.ErrorResult{Status: http.StatusBadRequest, Message: "No record found"})
 	}
@@ -45,7 +44,7 @@ func (h *handlerSubList) GetSubList(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, resultdto.ErrorResult{Status: http.StatusBadRequest, Message: err.Error()})
 	}
 
-	return c.JSON(http.StatusOK, resultdto.SuccessResult{Status: http.StatusOK, Message: "Product data successfully obtained", Data: convertResponseSubList(sublist)})
+	return c.JSON(http.StatusOK, resultdto.SuccessResult{Status: http.StatusOK, Message: "Product data successfully obtained", Data: sublist})
 }
 
 func (h *handlerSubList) CreateSubList(c echo.Context) error {
@@ -102,14 +101,15 @@ func (h *handlerSubList) CreateSubList(c echo.Context) error {
 }
 
 func (h *handlerSubList) UpdateSubList(c echo.Context) error {
-	dataFile := c.Get("dataFile").(string)
-	fmt.Println("this is data file", dataFile)
+	dataFile := c.Get("dataFiles").([]string)
+	stringDataFiles := strings.Join(dataFile, ",")
+
 	todo, _ := strconv.Atoi(c.FormValue("todo_id"))
 	request := sublistdto.UpdateSublistRequest{
 		TodoID:      todo,
 		Title:       c.FormValue("title"),
 		Description: c.FormValue("description"),
-		Files:       dataFile,
+		Files:       stringDataFiles,
 	}
 
 	id, _ := strconv.Atoi(c.Param("id"))
@@ -137,7 +137,14 @@ func (h *handlerSubList) UpdateSubList(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, resultdto.ErrorResult{Status: http.StatusInternalServerError, Message: err.Error()})
 
 	}
-	return c.JSON(http.StatusOK, resultdto.SuccessResult{Status: http.StatusOK, Message: "data sudah berhasil di update", Data: convertResponseSubList(data)})
+	result := map[string]interface{}{
+		"title":       data.Title,
+		"description": data.Description,
+		"files":       strings.Split(data.Files, ","),
+		"todo_id":     data.TodoID,
+		"todo":        data.Todo,
+	}
+	return c.JSON(http.StatusOK, resultdto.SuccessResult{Status: http.StatusOK, Message: "data sudah berhasil di update", Data: result})
 
 }
 
@@ -154,7 +161,7 @@ func (h *handlerSubList) DeleteSubList(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, resultdto.ErrorResult{Status: http.StatusInternalServerError, Message: err.Error()})
 
 	}
-	return c.JSON(http.StatusOK, resultdto.SuccessResult{Status: http.StatusOK, Message: "data sudah berhasil di hapus", Data: convertResponseSubList(data)})
+	return c.JSON(http.StatusOK, resultdto.SuccessResult{Status: http.StatusOK, Message: "data sudah berhasil di hapus", Data: data})
 }
 
 func (h *handlerSubList) GetAllSubLists(c echo.Context) error {
@@ -181,27 +188,6 @@ func (h *handlerSubList) GetAllSubLists(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, resultdto.SuccessResult{Status: http.StatusOK, Message: "Todo data successfully obtained", Data: responseData})
-}
-
-func convertResponseSubList(u models.SubList) sublistdto.SubListResponse {
-	return sublistdto.SubListResponse{
-		ID:     u.ID,
-		TodoID: u.TodoID,
-		// Todo:        convertTodoResponse(),
-		Title:       u.Title,
-		Description: u.Description,
-		Files:       u.Files,
-	}
-}
-
-func convertResponseSubLists(sublists []models.SubList) []sublistdto.SubListResponse {
-	var responseSubLists []sublistdto.SubListResponse
-
-	for _, sublist := range sublists {
-		responseSubLists = append(responseSubLists, convertResponseSubList(sublist))
-	}
-
-	return responseSubLists
 }
 
 func convertTodoResponse(c models.Todo) models.TodoResponse {
